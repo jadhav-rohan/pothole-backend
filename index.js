@@ -2,17 +2,14 @@ import express from "express"
 import cors from "cors"
 import mongoose, { mongo } from "mongoose"
 import bcrypt from "bcrypt";
-import multer from "multer";
-// const asyncHandler = require("express-async-handler");
-
-import formidable from "formidable"
-import _ from "lodash"
-import fs from "fs"
+import multer, { diskStorage } from "multer";
+// import bodyParser from "bodyParser"
 
 const app = express()
 app.use(express.json())
 app.use(express.urlencoded())
 app.use(cors())
+// app.use(bodyParser.urlencoded({ extended: true }));
 
 mongoose.connect("mongodb://localhost:27017/pothole", {
     useNewUrlParser: true,
@@ -21,89 +18,86 @@ mongoose.connect("mongodb://localhost:27017/pothole", {
     console.log("DB connected")
 })
 
+//Schema
 const userSchema = new mongoose.Schema({
     name: String,
     email: String,
     password: String
 })
 
-const potholeScheme = new mongoose.Schema({
-    email: String,
-    address: String,
-    pincode: Number,
-    city: String,
-    state: String,
-    potholeImage: String
-})
-
-const User = new mongoose.model("User", userSchema)
-const potholes = new mongoose.model("DetailsPot", potholeScheme)
-
-//Functions
-const storage = multer.diskStorage({
-    destination: (req, file, callback) => {
-        callback(null, "../frontend/public/uploads")
+const ImageSchema = new mongoose.Schema({
+    email:{
+        type: String,
+        // required: true,
+        default: ""
     },
-    filename: (req, file, callback) => {
-        callback(null, file.originalname);
+    address:{
+        type: String,
+        default: "",
+        // required: true
+    },
+    pincode:{
+        type: String,
+        default: "",
+        // required: true
+    },
+    city:{
+        type: String,
+        default: "",
+        // required: true
+    },
+    state:{
+        type: String,
+        default: "",
+        // required: true
+    },
+    image:{
+        data: Buffer,
+        contentType: String 
     }
 })
 
-const upload = multer({storage: storage})
+//Model
+const User = new mongoose.model("User", userSchema)
+const ImageModel = new mongoose.model("imageModel", ImageSchema);
+
+//storage
+const Storage = multer.diskStorage({
+    destination: 'uploads',
+    filename: (req, file, cb) => {
+        cb(null, file.originalname)
+    }
+})
+
+const upload = multer({
+    storage:Storage
+}).single('testImage')
+
+// app.use(multer({ storage : Storage}).fields([{name:'testImage',maxCount:1}]));
 
 //Routes
-app.post("/add",upload.single("potholeImage"), (req, res) => {
-    // const newPot = new potholes({
-    //     email: req.body.email,
-    //     address: req.body.address,
-    //     pincode: req.body.pincode,
-    //     city: req.body.city,
-    //     state: req.body.state,
-    //     potholeImage: req.file.potholeImage
-    // })
-
-    let form = new formidable.IncomingForm();
-    form.keepExtensions = true;
-
-    form.parse(req, (err, fields, file) => {
-    if (err) {
-      return res.status(400).json({
-        error: "problem with image",
-      });
-    }
-    //destructure the fields
-    const { email, address, pincode,city,state } = fields;
-
-    if (!email || !address || !pincode || !city || !state) {
-      return res.status(400).json({
-        error: "Please include all fields",
-      });
-    }
-
-    let pothole = new potholes(fields);
-
-    //handle file here
-    if (file.photo) {
-      if (file.photo.size > 3000000) {
-        return res.status(400).json({
-          error: "File size too big!",
-        });
-      }
-      pothole.photo.data = fs.readFileSync(file.photo.path);
-      pothole.photo.contentType = file.photo.type;
-    }
-    // console.log(product);
-
-    //save to the DB
-    product.save((err, pothole) => {
-      if (err) {
-        res.status(400).json({
-          error: "Saving tshirt in DB failed",
-        });
-      }
-      res.json(pothole);
-    });
-  });
+app.post("/add", (req, res, next) => {
+    upload(req, res, (err) => {
+        if(err){
+            console.log(err)
+        }
+        else{
+            const newImage = new ImageModel({
+                email: req.body.email,
+                address: req.body.address,
+                pincode: req.body.pincode,
+                city: req.body.city,
+                state: req.body.state,
+                image: {
+                    data: req.file.filename,
+                    contentType: "image/jpg"
+                }
+            })
+            newImage.save()
+            .then(() => res.send("Sucessfully Uploaded!"))
+            .catch(err => console.log(err))
+        }
+    })
 })
 
 app.post("/login", (req, res)=> {
