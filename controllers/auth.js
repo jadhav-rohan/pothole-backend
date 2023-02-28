@@ -23,7 +23,6 @@ exports.signup  = (req, res) => {
                     return res.send(err)
                 } 
                 else {
-                    // console.log("Success!")
                     res.send({message: "Successfully Registered, Please login now."})
                 }
             })
@@ -45,12 +44,13 @@ exports.login = (req,res) => {
                         const token = jwt.sign({
                                         userId: user._id,
                                         name : user.name
-                                    }, 'secret' , { expiresIn : "24h"});
+                        }, 'secret' , { expiresIn : "24h"});
 
                         return res.status(200).send({
                             msg: "Login Successful...!",
                             name: user.name,
-                            token
+                            token,
+                            user
                         });                                    
                     })
                     .catch(error => {
@@ -81,5 +81,5 @@ exports.isAuthenticated = (req, res, next) => {
       });
     }
     next(); //next is responsible for transferring the control form one middleware to another
-  };
+};
 
