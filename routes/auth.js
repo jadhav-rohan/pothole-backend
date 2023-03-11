@@ -1,7 +1,7 @@
 const express = require("express");
 var router = express.Router();
 const { check, validationResult } = require("express-validator");
-const { login, signup, signout, verifyUser } = require("../controllers/auth");
+const { login, signup, signout, verifyUser, resetPassword, forgetPassword, resetPasswordPost } = require("../controllers/authController");
 
 router.post("/signup",
 [
@@ -19,6 +19,10 @@ router.post("/login",
 ],
 login);
 
-router.get("/signout", signout);    
+router.get("/signout", signout);   
+
+router.get("/reset-password/:id/:token", resetPassword);
+router.post("/forget-password", forgetPassword)
+router.post("/reset-password/:id/:token", resetPasswordPost);
 
 module.exports = router;
