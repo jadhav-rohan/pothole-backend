@@ -16,24 +16,9 @@ const userSchema = new mongoose.Schema({
         required: [true, "Please provide a unique email"],
         unique: true,
     },
-    mobile: {
+    role: {
         type: Number
     }
 })
-
-const volunteerSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: [true]
-    },
-    email: {
-        type: String
-    },
-    mobile: {
-        type: Number
-    }
-})
-
 
 module.exports = mongoose.model("User", userSchema);
-module.exports = mongoose.model("Volunteer", volunteerSchema);

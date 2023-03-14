@@ -6,7 +6,7 @@ var nodemailer = require('nodemailer');
 const JWT_SECRET = "secret"
 // yqmigcelmruaxrxa
 exports.signup  = (req, res) => {
-    const { name, email, password, mobile} = req.body
+    const { name, email, password} = req.body
     User.findOne({email: email}, (err, user) => {
         if(user){
             res.send({message: "User already registerd"})
@@ -17,8 +17,8 @@ exports.signup  = (req, res) => {
             const user = new User({
                 name,
                 email,
-                password: hash,
-                mobile 
+                password: hash, 
+                role: 0
             })
             user.save(err => {
                 if(err) {
@@ -48,11 +48,13 @@ exports.login = (req,res) => {
                                         name : user.name
                         }, 'secret' , { expiresIn : "24h"});
 
+                        const {_id, name, email, role} = user;
                         return res.status(200).send({
                             msg: "Login Successful...!",
-                            name: user.name,
+                            // name: user.name,
+                            // role: user.role,
                             token,
-                            user
+                            user: {_id, name, email, role}
                         });                                    
                     })
                     .catch(error => {
@@ -183,3 +185,11 @@ exports.resetPasswordPost =  async (req, res) => {
     }
 };
 
+exports.isAdmin = (req, res, next) => {
+    if (req.user.role === 0) {
+      return res.status(403).json({
+        error: "You are not admin, Access Denied!",
+      });
+    }
+    next();
+};

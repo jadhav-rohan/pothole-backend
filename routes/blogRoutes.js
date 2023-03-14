@@ -1,6 +1,8 @@
 const express = require("express");
+const { isAdmin, isAuthenticated } = require("../controllers/authController");
 const { addBlog, getAllBlogs, getSingleBlog } = require("../controllers/blogs");
 var router = express.Router();
+
 
 
 router.post("/addBlog", addBlog)

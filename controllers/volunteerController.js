@@ -1,4 +1,4 @@
-const Volunteer = require("../models/user")
+const Volunteer = require("../models/volunteerSchema")
 
 exports.addVolunteer  = (req, res) => {
     const { name, email, mobile} = req.body
