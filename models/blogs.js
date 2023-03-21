@@ -6,7 +6,6 @@ const Blogs = new mongoose.Schema({
     },
     description:{
         type: String,
-        // required: true
     },
     date:{
         type: String,

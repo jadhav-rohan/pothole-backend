@@ -2,45 +2,122 @@ const bcrypt = require("bcrypt")
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 var nodemailer = require('nodemailer');
+const Token = require("../models/token");
+const crypto = require("crypto");
+const sendEmail = require("../utils/sendEmail");
 
 const JWT_SECRET = "secret"
 // yqmigcelmruaxrxa
-exports.signup  = (req, res) => {
-    const { name, email, password} = req.body
-    User.findOne({email: email}, (err, user) => {
-        if(user){
-            res.send({message: "User already registerd"})
-        } else {
-            const salt = bcrypt.genSaltSync(10);
-            const hash = bcrypt.hashSync(password, salt);
+exports.signup  = async (req, res) => {
+    // const { name, email, password} = req.body
+    // User.findOne({email: email}, (err, user) => {
+    //     if(user){
+    //         res.send({code: 404, message: "User already registerd"})
+    //     } else {
+    //         const salt = bcrypt.genSaltSync(10);
+    //         const hash = bcrypt.hashSync(password, salt);
 
-            const user = new User({
-                name,
-                email,
-                password: hash, 
-                role: 0
-            })
-            user.save(err => {
-                if(err) {
-                    return res.send(err)
-                } 
-                else {
-                    res.send({message: "Successfully Registered, Please login now."})
-                }
-            })
-        }
-    })
+    //         const user = new User({
+    //             name,
+    //             email,
+    //             password: hash, 
+    //             role: 0
+    //         })
+    //         user.save(err => {
+    //             if(err) {
+    //                 return res.send({message: "Erro"})
+    //             }
+    //             else {
+    //                 res.send({code: 200, message: "Successfully Registered, Please login now."})
+    //             }
+    //         })
+    //     }
+    // })
+    try {
+		const { error, email, mobile } = (req.body);
+		if (error)
+			return res.status(400).send({ message: error.details[0].message });
+
+		let user = await User.findOne({ email: req.body.email });
+		if (user)
+			return res
+				.status(409)
+				.send({ message: "User with given email already Exist!" });
+
+		const salt = await bcrypt.genSalt(Number(process.env.SALT));
+		const hashPassword = await bcrypt.hash(req.body.password, salt);
+
+		user = await new User({ ...req.body, password: hashPassword }).save();
+        console.log(mobile)
+		const token = await new Token({
+			userId: user._id,
+			token: crypto.randomBytes(32).toString("hex"),
+		}).save();
+		const link = `${process.env.BASE_URL}/${user.id}/verify/${token.token}`;
+		
+        var transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: 'rohanj2424@gmail.com',
+              pass: 'uhgmxmbejpapbhhz'
+            }
+          });
+          
+          var mailOptions = {
+            from: 'youremail@gmail.com',
+            to: email,
+            subject: 'Email Verifation',
+            text: "Verify your email by clicking on this link: " + link
+          };
+          
+          transporter.sendMail(mailOptions, function(error, info){
+            if (error) {
+              console.log("jhdf",error);
+              res.status(400).send({error: "User not registered!"})
+            } else {
+                res.status(200).send({message: "Email Sent!"})
+              console.log('Email sent: ' + info.response);
+
+            }
+          });
+	} catch (error) {
+		console.log(error);
+		res.status(500).send({ message: "Internal Server Error" });
+	}
+
+}
+
+exports.verify = async (req, res) => {
+    try {
+		const user = await User.findOne({ _id: req.params.id });
+		if (!user) return res.status(400).send({ message: "Invalid link" });
+
+		const token = await Token.findOne({
+			userId: user._id,
+			token: req.params.token,
+		});
+        console.log("token", token.userId)
+		if (!token.userId) return res.status(400).send({ message: "Invalid link" });
+
+		await User.updateOne({ _id: user._id, verified: true });
+		await token.remove();
+
+		res.status(200).send({ message: "Email verified successfully" });
+	} catch (error) {
+		res.status(500).send({ message: "Internal Server Error" });
+	}
 }
 
 exports.login = (req,res) => {
     const { email, password } = req.body;
+    const user = User.findOne({email: email})
     try {
         User.findOne({ email: email })
             .then(user => {
                 bcrypt.compare(password, user.password)
                     .then(passwordCheck => {
 
-                        if(!passwordCheck) return res.status(400).send({ error: "Don't have Password"});
+                        if(!passwordCheck) return res.send({code: 400, message: "Password does not Match"});
 
                         // create jwt token
                         const token = jwt.sign({
@@ -48,25 +125,27 @@ exports.login = (req,res) => {
                                         name : user.name
                         }, 'secret' , { expiresIn : "24h"});
 
+                        if(!user.verified){
+                            return res.send({code: 400, message: "Please verify your email!"})
+                        }
                         const {_id, name, email, role} = user;
-                        return res.status(200).send({
-                            msg: "Login Successful...!",
-                            // name: user.name,
-                            // role: user.role,
-                            token,
-                            user: {_id, name, email, role}
+                        return res.send({
+                            code: 200,
+                            message: "Login Successful...!",
+                            token: token,
+                            role: role,
                         });                                    
                     })
                     .catch(error => {
-                        return res.status(400).send({ error: "Password does not Match"})
+                        return res.send({ code: 400, message: "Password does not Match"})
                     })
             })
             .catch( error => {
-                return res.status(404).send({ error : "Username not Found"});
+                return res.send({code: 404, message : "Username not Found"});
             })
 
     } catch (error) {
-        return res.status(500).send({ error: "eoororoor"});
+        return res.status(500).send({ message: "eoororoor"});
     }
 }
 
@@ -108,7 +187,7 @@ exports.forgetPassword = async (req, res) => {
             service: 'gmail',
             auth: {
               user: 'rohanj2424@gmail.com',
-              pass: 'yqmigcelmruaxrxa'
+              pass: 'urayzdshlrnpxmuv'
             }
           });
           
@@ -121,11 +200,12 @@ exports.forgetPassword = async (req, res) => {
           
           transporter.sendMail(mailOptions, function(error, info){
             if (error) {
-              console.log(error);
+              console.log("jhdf",error);
               res.status(400).send({error: "User not registered!"})
             } else {
                 res.status(200).send({msg: "Email Sent!"})
-              console.log('Email sent: ' + info.response);
+              console.log('Emasil sent: ' + info.response);
+
             }
           });
         // console.log(link)
@@ -136,7 +216,7 @@ exports.forgetPassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
     const {id, token} = req.params;
     console.log(req.params)
-    // res.send("Done") 
+    // res.se   nd("Done") 
 
     const oldUser = await User.findOne({_id: id});
     if(!oldUser){
