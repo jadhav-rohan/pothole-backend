@@ -90,18 +90,19 @@ exports.signup  = async (req, res) => {
 exports.verify = async (req, res) => {
     try {
 		const user = await User.findOne({ _id: req.params.id });
+    // console.log(req.params.id)
 		if (!user) return res.status(400).send({ message: "Invalid link" });
-
+    // console.log(user)
 		const token = await Token.findOne({
 			userId: user._id,
 			token: req.params.token,
 		});
-        console.log("token", token.userId)
-		if (!token.userId) return res.status(400).send({ message: "Invalid link" });
+    console.log("token", token.userId)
+		if (!token) return res.status(400).send({ message: "Invalid link" });
 
-		await User.updateOne({ _id: user._id, verified: true });
+		await User.updateOne({ _id: user._id}, {$set:{verified: true}});
 		await token.remove();
-
+    console.log("first")
 		res.status(200).send({ message: "Email verified successfully" });
 	} catch (error) {
 		res.status(500).send({ message: "Internal Server Error" });
@@ -134,6 +135,7 @@ exports.login = (req,res) => {
                             message: "Login Successful...!",
                             token: token,
                             role: role,
+                            email: email
                         });                                    
                     })
                     .catch(error => {
