@@ -41,6 +41,7 @@ app.use("/api", addRoutes);
 app.use("/api", volunteerRoute);
 app.use("/api", blogRoute);
 
-app.listen(9002,() => {
+const PORT = process.env.PORT || 9002
+app.listen(PORT,() => {
     console.log("BE started at port 9002")
 })
