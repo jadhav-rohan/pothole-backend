@@ -20,9 +20,6 @@ app.use(cookieParser());
 app.use(express.json({limit: "10mb", extended: true}))
 app.use(express.urlencoded({limit: "10mb", extended: true, parameterLimit: 50000}))
 
-
-
-// mongoose.connect("mongodb://localhost:27017/pothole", {
 mongoose.connect("mongodb+srv://rohan:mongodb2023@cluster0.3dejqga.mongodb.net/?retryWrites=true&w=majority", {
     useNewUrlParser: true,
     useUnifiedTopology: true
