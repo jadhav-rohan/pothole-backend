@@ -3,7 +3,7 @@ const cloudinary = require("../utils/cloudinary");
 
 
 exports.addPothole = async (req, res) => {
-    const { email, address, city, state, pincode, image } = req.body;
+    const { email, address, city, state, pincode, image, street, lat, lng, subLocality } = req.body;
 
   try {
     if (image) {
@@ -18,6 +18,10 @@ exports.addPothole = async (req, res) => {
           city,
           state,
           pincode,
+          latitude: lat,
+          longitude: lng,
+          sublocality: subLocality,
+          street: street,
           image: uploadedResponse,
         });
 

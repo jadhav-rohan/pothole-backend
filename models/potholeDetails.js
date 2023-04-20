@@ -22,6 +22,18 @@ const Pothole = new mongoose.Schema({
     },
     image:{
         type: Object
+    },
+    latitude: {
+        type: String,
+    },
+    longitude: {
+        type: String,
+    },
+    street: {
+        type: String,
+    },
+    sublocality: {
+        type: String
     }
 })
 

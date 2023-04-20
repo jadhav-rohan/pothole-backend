@@ -32,11 +32,14 @@ const authRoutes = require("./routes/auth");
 const addRoutes = require("./routes/pothole");
 const volunteerRoute = require("./routes/volunteer")
 const blogRoute = require("./routes/blogRoutes")
+const demoRoutes = require("./routes/demoRoutes")
 
 app.use("/api", authRoutes);
 app.use("/api", addRoutes);
 app.use("/api", volunteerRoute);
 app.use("/api", blogRoute);
+
+app.use("/api/reverse-geocode", demoRoutes);
 
 const PORT = process.env.PORT || 9002
 app.listen(PORT,() => {
