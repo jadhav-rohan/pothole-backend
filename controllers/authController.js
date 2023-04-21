@@ -53,7 +53,8 @@ exports.signup  = async (req, res) => {
 			userId: user._id,
 			token: crypto.randomBytes(32).toString("hex"),
 		}).save();
-		const link = `${process.env.BASE_URL}/${user.id}/verify/${token.token}`;
+		// const link = `${process.env.BASE_URL}/${user.id}/verify/${token.token}`;
+		const link = `https://dynamic-alfajores-6f9271.netlify.app//${user.id}/verify/${token.token}`;
 		
         var transporter = nodemailer.createTransport({
             service: 'gmail',

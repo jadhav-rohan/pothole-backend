@@ -54,3 +54,13 @@ exports.getAll =  async (req, res) => {
     }
   };
 
+exports.getSinglePothole = async (req, res) => {
+    const _id = req.params.id;
+    try{
+      Pothole.findOne({_id : _id}).then(data => {
+        return res.status(200).send({
+          data: data
+        })
+      })
+    }catch(err){console.log("pothole not found")}
+}
