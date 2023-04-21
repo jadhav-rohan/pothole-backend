@@ -41,8 +41,7 @@ exports.signup  = async (req, res) => {
 		let user = await User.findOne({ email: req.body.email });
 		if (user)
 			return res
-				.status(409)
-				.send({ message: "User with given email already Exist!" });
+				.send({code: 409, message: "User with given email already Exist!" });
 
 		const salt = await bcrypt.genSalt(Number(process.env.SALT));
 		const hashPassword = await bcrypt.hash(req.body.password, salt);
@@ -185,7 +184,8 @@ exports.forgetPassword = async (req, res) => {
             expiresIn: "5m"
         });
 
-        const link = `http://localhost:9002/api/reset-password/${oldUser._id}/${token}`;
+        // const link = `http://localhost:9002/api/reset-password/${oldUser._id}/${token}`;
+        const link = `https://pothole.onrender.com/api/reset-password/${oldUser._id}/${token}`;
         var transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
